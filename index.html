@@ -1,0 +1,135 @@
+<!doctype html>
+<!-- Oscilator-AAT · production candidate 1 · © antarxo 2026 -->
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ΑΑΤ — ταλαντωτής (m,k), κυκλικό μοντέλο και αρχική φάση</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#17232d;background:#eef3f6}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#eef3f6}
+body{display:grid;place-items:center;padding:10px}
+.app{width:min(100%,900px);background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
+.stage-wrap{position:relative;width:100%;aspect-ratio:5/3;background:linear-gradient(#fbfdfe,#f2f6f8)}
+canvas{display:block;width:100%;height:100%}
+.phase-panel{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:none;align-items:center;gap:10px;width:min(92%,640px);padding:8px 12px;border:1px solid #b8c8d2;border-radius:10px;background:#ffffffed;box-shadow:0 4px 15px #2638461f;font-size:13px}
+.phase-panel.visible{display:flex}.phase-panel label{font-weight:750;white-space:nowrap}.phase-panel input{flex:1;min-width:120px}.phase-value{min-width:64px;text-align:right;font-weight:800;color:#176a89}
+.controls{min-height:58px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid #c7d2da;background:#f8fafb}
+button{appearance:none;border:1px solid #8da3b2;background:#fff;color:#203848;border-radius:8px;padding:8px 12px;font:700 13px/1 system-ui;cursor:pointer;box-shadow:0 1px 2px #00000010}
+button:hover{background:#edf5fa} button.active{background:#1b789b;color:#fff;border-color:#176a89} button.primary{background:#226b92;color:#fff;border-color:#185877}
+button:disabled{opacity:.42;cursor:not-allowed}@media(max-width:680px){button{font-size:12px;padding:8px 9px}.controls{gap:5px}.phase-panel{font-size:12px}}
+@media print{body{padding:0;background:#fff}.app{box-shadow:none;border:0;border-radius:0;width:100%}.controls,.phase-panel{display:none!important}}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <section class="stage-wrap" id="stageWrap">
+    <canvas id="scene" width="900" height="540" aria-label="Σκηνή απλής αρμονικής ταλάντωσης"></canvas>
+    <div class="phase-panel" id="phasePanel">
+      <label for="phaseRange">Αρχική φάση φ₀</label>
+      <input id="phaseRange" type="range" min="0" max="359" step="1" value="90">
+      <span class="phase-value" id="phaseValue">90°</span>
+    </div>
+  </section>
+  <nav class="controls" aria-label="Χειριστήρια σκηνής">
+    <button id="playBtn" class="primary">⏸ Παύση</button>
+    <button id="resetBtn">|◀ Επαναφορά</button>
+    <button id="axisBtn">Άξονας</button>
+    <button id="circleBtn">Κύκλος</button>
+    <button id="projectionBtn">Προβολή</button>
+    <button id="graphBtn">Γράφημα</button>
+    <button id="phaseBtn">Αρχική φάση</button>
+    <button id="nowBtn">Τώρα → t=0</button>
+  </nav>
+</main>
+<script>
+(() => {
+'use strict';
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+const ids=['playBtn','resetBtn','axisBtn','circleBtn','projectionBtn','graphBtn','phaseBtn','nowBtn','phasePanel','phaseRange','phaseValue'];
+const els=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
+const params=new URLSearchParams(location.search);
+const presets={
+ spring:{axis:false,circle:false,projection:false,graph:false,phaseMode:false},
+ spring_axis:{axis:true,circle:false,projection:false,graph:false,phaseMode:false},
+ spring_circle:{axis:true,circle:true,projection:false,graph:false,phaseMode:false},
+ spring_projection:{axis:true,circle:true,projection:true,graph:false,phaseMode:false},
+ spring_graph:{axis:true,circle:true,projection:true,graph:true,phaseMode:false},
+ spring_phase:{axis:true,circle:true,projection:true,graph:true,phaseMode:true}
+};
+const initialPhiDeg=Number.isFinite(+params.get('phi'))?((+params.get('phi')%360)+360)%360:90;
+const state={running:params.get('play')!=='0',axis:false,circle:false,projection:false,graph:false,phaseMode:false,t:0,last:performance.now(),period:4,amplitude:92,phi0:initialPhiDeg*Math.PI/180,transition:1};
+function normalizeAngle(a){const two=2*Math.PI;return ((a%two)+two)%two}
+function applyPreset(name){Object.assign(state,presets[name]||presets.spring);state.transition=0;if(params.has('play'))state.running=params.get('play')!=='0';updateButtons()}
+applyPreset(params.get('state')||params.get('preset')||'spring');
+function setFlag(key,val){state[key]=val;
+ if(key==='projection'&&val){state.circle=true;state.axis=true}
+ if(key==='graph'&&val){state.circle=true;state.projection=true;state.axis=true}
+ if(key==='phaseMode'&&val){state.circle=true;state.projection=true;state.graph=true;state.axis=true}
+ if(key==='circle'&&!val){state.projection=false;state.graph=false;state.phaseMode=false}
+ if(key==='projection'&&!val){state.graph=false;state.phaseMode=false}
+ if(key==='graph'&&!val){state.phaseMode=false}
+ state.transition=0;updateButtons();
+}
+function updateButtons(){
+ els.playBtn.textContent=state.running?'⏸ Παύση':'▶ Έναρξη';
+ for(const k of ['axis','circle','projection','graph'])els[k+'Btn'].classList.toggle('active',state[k]);
+ els.phaseBtn.classList.toggle('active',state.phaseMode);els.phasePanel.classList.toggle('visible',state.phaseMode);
+ els.projectionBtn.disabled=!state.circle;els.graphBtn.disabled=!state.projection;els.phaseBtn.disabled=!state.graph;els.nowBtn.disabled=!state.circle;
+ const deg=Math.round(normalizeAngle(state.phi0)*180/Math.PI)%360;els.phaseRange.value=String(deg);els.phaseValue.textContent=`${deg}°`;
+}
+els.playBtn.onclick=()=>{state.running=!state.running;state.last=performance.now();updateButtons()};
+els.resetBtn.onclick=()=>{state.t=0;state.phi0=Math.PI/2;state.running=false;state.last=performance.now();updateButtons()};
+els.axisBtn.onclick=()=>setFlag('axis',!state.axis);
+els.circleBtn.onclick=()=>setFlag('circle',!state.circle);
+els.projectionBtn.onclick=()=>setFlag('projection',!state.projection);
+els.graphBtn.onclick=()=>setFlag('graph',!state.graph);
+els.phaseBtn.onclick=()=>setFlag('phaseMode',!state.phaseMode);
+els.nowBtn.onclick=()=>{state.phi0=normalizeAngle(2*Math.PI*state.t/state.period+state.phi0);state.t=0;state.phaseMode=true;state.last=performance.now();updateButtons()};
+els.phaseRange.addEventListener('input',()=>{state.phi0=Number(els.phaseRange.value)*Math.PI/180;state.t=0;state.running=false;state.phaseMode=true;state.last=performance.now();updateButtons()});
+
+function lerp(a,b,u){return a+(b-a)*u}function ease(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2}
+function line(x1,y1,x2,y2,stroke='#263b48',w=2,dash=[]){ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function text(s,x,y,size=16,align='center',color='#17232d',weight=600){ctx.save();ctx.fillStyle=color;ctx.font=`${weight} ${size}px system-ui`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(s,x,y);ctx.restore()}
+function drawArrow(x,y,dy,color='#16845c'){line(x,y,x,y+dy,color,2.4);ctx.save();ctx.fillStyle=color;ctx.beginPath();const sy=Math.sign(dy)||1;ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-8*sy);ctx.lineTo(x+5,y+dy-8*sy);ctx.closePath();ctx.fill();ctx.restore()}
+function drawSpring(x,top,bottom){const coils=18,amp=13;ctx.save();ctx.strokeStyle='#526978';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,top);for(let i=1;i<=coils;i++){const y=top+(bottom-top)*i/coils;ctx.lineTo(x+(i%2?amp:-amp),y)}ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();text('k',x+25,(top+bottom)/2,17,'left','#344b59',750)}
+function drawMass(x,y){ctx.save();ctx.fillStyle='#3c92b7';ctx.strokeStyle='#174d68';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-27,y-22,54,44,7);ctx.fill();ctx.stroke();ctx.restore();text('m',x,y,18,'center','#fff',800)}
+function drawAxis(x,cy,A){line(x,cy-A-22,x,cy+A+22,'#60727e',1.5);line(x-7,cy-A,x+7,cy-A);line(x-7,cy,x+7,cy);line(x-7,cy+A,x+7,cy+A);text('+A',x-12,cy-A,15,'right');text('0',x-12,cy,15,'right');text('−A',x-12,cy+A,15,'right')}
+function drawPhaseArc(cx,cy,A,phi0){const r=Math.min(46,A*.52),end=-normalizeAngle(phi0);ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(cx,cy,r,0,end,true);ctx.stroke();ctx.restore();const mid=end/2;text('φ₀',cx+(r+13)*Math.cos(mid),cy+(r+13)*Math.sin(mid),15,'center','#8c5818',800)}
+function drawCircle(cx,cy,A,phase,phi0,phaseMode){ctx.save();ctx.strokeStyle='#506773';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,A,0,Math.PI*2);ctx.stroke();ctx.restore();line(cx-A-15,cy,cx+A+15,cy,'#a4b1b8',1);line(cx,cy-A-15,cx,cy+A+15,'#a4b1b8',1);
+ if(phaseMode){const ix=cx+A*Math.cos(phi0),iy=cy-A*Math.sin(phi0);line(cx,cy,ix,iy,'#a56a1f',1.7,[5,4]);ctx.save();ctx.fillStyle='rgba(198,62,55,.22)';ctx.strokeStyle='rgba(198,62,55,.45)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(ix,iy,10,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();text('t=0',ix+14,iy-14,12,'left','#a1473f',700);drawPhaseArc(cx,cy,A,phi0)}
+ const px=cx+A*Math.cos(phase),py=cy-A*Math.sin(phase);line(cx,cy,px,py,'#16845c',3);ctx.fillStyle='#c63e37';ctx.beginPath();ctx.arc(px,py,9,0,Math.PI*2);ctx.fill();return{px,py};}
+function drawGraph(x,y,w,A,phase,phi0,t,period){line(x,y-A-18,x,y+A+18);line(x,y,x+w,y);text('x',x-9,y-A-15,15);text('t',x+w+10,y+12,15);line(x,y-A,x+w,y-A,'#aebbc2',1,[4,4]);line(x,y+A,x+w,y+A,'#aebbc2',1,[4,4]);text('+A',x-7,y-A,13,'right');text('−A',x-7,y+A,13,'right');text('0',x-7,y,13,'right');
+ const n=Math.floor(Math.max(0,t)/period),cycle=((t%period)+period)%period,frac=cycle/period;
+ text(`(${n}T, 0)`,x-3,y+19,12,'left','#334d5b',700);text(`${n+1}T`,x+w,y+19,12,'center','#334d5b',700);
+ ctx.save();ctx.strokeStyle='#8da3b2';ctx.globalAlpha=.58;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=180;i++){const u=i/180,xx=x+u*w,yy=y-A*Math.sin(u*Math.PI*2+phi0);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();ctx.restore();
+ ctx.save();ctx.strokeStyle='#226b92';ctx.lineWidth=3;ctx.beginPath();const nPoints=Math.max(1,Math.floor(180*frac));for(let i=0;i<=nPoints;i++){const u=i/180,xx=x+u*w,yy=y-A*Math.sin(u*Math.PI*2+phi0);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();ctx.restore();
+ const px=x+frac*w,py=y-A*Math.sin(phase),yFinal=y-A*Math.sin(phi0);line(x+w,yFinal,x+w,y,'#8da3b2',1,[3,3]);return{px,py,x0:x,y0:y-A*Math.sin(phi0)};}
+function drawCurrentPoint(x,y,r=6,color='#c63e37'){ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawOutlinePoint(x,y,r=7,color='#a56a1f'){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.restore()}
+function drawGhostMass(x,y){ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=1.8;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(x-27,y-22,54,44,7);ctx.stroke();ctx.restore();text('t=0',x+34,y-28,12,'left','#8c5818',700)}
+function drawPhaseReadout(phi0,omega,A){const deg=Math.round(normalizeAngle(phi0)*180/Math.PI)%360,x0=Math.sin(phi0),v0=Math.cos(phi0),dir=Math.abs(v0)<.015?'υ₀ = 0':v0>0?'υ₀ > 0':'υ₀ < 0';ctx.save();ctx.fillStyle='#ffffffed';ctx.strokeStyle='#c7d2da';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(328,62,244,94,9);ctx.fill();ctx.stroke();ctx.restore();text(`φ₀ = ${deg}°`,343,80,14,'left','#176a89',800);text(`x₀/A = ${x0.toFixed(2)}`,343,102,13,'left','#334d5b',700);text(dir,343,123,13,'left','#334d5b',700);text('x=A·ημ(ωt+φ₀)',343,145,13,'left','#334d5b',750)}
+function draw(){
+ const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;state.transition=Math.min(1,state.transition+dt*2.4);const u=ease(state.transition);
+ const W=canvas.width,H=canvas.height,cy=260,A=state.amplitude,omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);
+ const expanded=state.circle||state.graph;const springCenter=expanded?765:450;const springX=lerp(450,springCenter,u);const massY=cy-A*Math.sin(phase),top=55;
+ let circlePoint=null,graphPoint=null,circleX=null;
+ if(state.circle){circleX=state.graph?145:250;circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
+ if(state.graph)graphPoint=drawGraph(315,cy,255,A,phase,state.phi0,state.t,state.period);
+ if(state.projection&&circlePoint){line(Math.min(circlePoint.px,circleX),massY,springX,massY,'#8d4f47',1.7,[7,5]);ctx.save();ctx.strokeStyle='#c63e37';ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(circleX,massY,10,0,Math.PI*2);ctx.stroke();ctx.restore();if(graphPoint)drawOutlinePoint(graphPoint.px,graphPoint.py,7,'#c63e37');drawCurrentPoint(circlePoint.px,circlePoint.py,9)}
+ if(state.axis)drawAxis(springX-55,cy,A);
+ line(springX-45,top,springX+45,top,'#344b59',5);drawSpring(springX,top+3,massY-24);drawMass(springX,massY);
+ if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A)}
+ ctx.save();ctx.fillStyle='#ffcc00';ctx.strokeStyle='#5f4c00';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(392,14,116,32,6);ctx.fill();ctx.stroke();ctx.restore();text(`t = ${state.t.toFixed(2)} s`,450,30,14,'center','#17232d',800);
+ text('Ταλαντωτής (m, k)',springX,475,17);if(state.circle)text('Κυκλικό μοντέλο',state.graph?145:250,475,17);if(state.graph)text('x(t) — ταλαντωτής / προβολή',442,475,16);
+ requestAnimationFrame(draw);
+}
+updateButtons();requestAnimationFrame(draw);
+window.AAT_BOOK_SCENE={version:'book-scene-v4',getState:()=>({running:state.running,axis:state.axis,circle:state.circle,projection:state.projection,graph:state.graph,phaseMode:state.phaseMode,t:state.t,phase0Deg:normalizeAngle(state.phi0)*180/Math.PI}),applyState:(next={})=>{for(const k of ['axis','circle','projection','graph','phaseMode'])if(k in next)state[k]=!!next[k];if('play'in next)state.running=!!next.play;if('t'in next&&Number.isFinite(+next.t))state.t=+next.t;if('phase0Deg'in next&&Number.isFinite(+next.phase0Deg))state.phi0=normalizeAngle(+next.phase0Deg*Math.PI/180);state.transition=1;updateButtons()},setPreset:applyPreset,setObservationNow:()=>els.nowBtn.click(),snapshot:()=>canvas.toDataURL('image/png')};
+window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='book-scene-apply')window.AAT_BOOK_SCENE.applyState(m.state||{});if(m.type==='book-scene-preset')applyPreset(m.preset);if(m.type==='book-scene-now')window.AAT_BOOK_SCENE.setObservationNow();if(m.type==='book-scene-snapshot')e.source?.postMessage({type:'book-scene-snapshot-result',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*')});
+window.parent?.postMessage({type:'book-scene-ready',version:'book-scene-v4',scene:'spring_shm'},'*');
+})();
+</script>
+</body>
+</html>
