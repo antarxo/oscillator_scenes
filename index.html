@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Oscilator-AAT · production candidate 1 · © antarxo 2026 -->
+<!-- Oscilator-AAT · production candidate 2 · canonical print snapshots · © antarxo 2026 -->
 <html lang="el">
 <head>
 <meta charset="utf-8">
@@ -127,7 +127,7 @@ function draw(){
 }
 updateButtons();requestAnimationFrame(draw);
 window.AAT_BOOK_SCENE={version:'book-scene-v4',getState:()=>({running:state.running,axis:state.axis,circle:state.circle,projection:state.projection,graph:state.graph,phaseMode:state.phaseMode,t:state.t,phase0Deg:normalizeAngle(state.phi0)*180/Math.PI}),applyState:(next={})=>{for(const k of ['axis','circle','projection','graph','phaseMode'])if(k in next)state[k]=!!next[k];if('play'in next)state.running=!!next.play;if('t'in next&&Number.isFinite(+next.t))state.t=+next.t;if('phase0Deg'in next&&Number.isFinite(+next.phase0Deg))state.phi0=normalizeAngle(+next.phase0Deg*Math.PI/180);state.transition=1;updateButtons()},setPreset:applyPreset,setObservationNow:()=>els.nowBtn.click(),snapshot:()=>canvas.toDataURL('image/png')};
-window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='book-scene-apply')window.AAT_BOOK_SCENE.applyState(m.state||{});if(m.type==='book-scene-preset')applyPreset(m.preset);if(m.type==='book-scene-now')window.AAT_BOOK_SCENE.setObservationNow();if(m.type==='book-scene-snapshot')e.source?.postMessage({type:'book-scene-snapshot-result',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*')});
+window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='book-scene-apply')window.AAT_BOOK_SCENE.applyState(m.state||{});if(m.type==='book-scene-preset')applyPreset(m.preset);if(m.type==='book-scene-now')window.AAT_BOOK_SCENE.setObservationNow();if(m.type==='book-scene-snapshot')e.source?.postMessage({type:'book-scene-snapshot-result',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*');if(m.type==='book-scene:capture-print-snapshot'&&m.protocol==='book-scene-v1'){e.source?.postMessage({type:'book-scene:print-snapshot',protocol:'book-scene-v1',executedPath:'book-scene-v1',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*')}});
 window.parent?.postMessage({type:'book-scene-ready',version:'book-scene-v4',scene:'spring_shm'},'*');
 })();
 </script>
