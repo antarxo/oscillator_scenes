@@ -9,14 +9,21 @@
 :root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#17232d;background:#eef3f6}
 *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#eef3f6}
 body{display:grid;place-items:center;padding:10px}
-.app{width:min(100%,900px);background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
+.app{position:relative;width:min(100%,900px);background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
 .stage-wrap{position:relative;width:100%;aspect-ratio:5/3;background:linear-gradient(#fbfdfe,#f2f6f8)}
+body.horizontal{padding:0;background:#fff}
+body.horizontal .app{width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;border:0;border-radius:0;box-shadow:none}
+body.horizontal .stage-wrap{aspect-ratio:auto;min-height:0;flex:1}
+body.horizontal #phaseBtn,body.horizontal #nowBtn,body.horizontal #phasePanel{display:none!important}
+body.horizontal .controls{min-height:40px;padding:6px 9px;gap:5px}
+body.horizontal button{min-width:34px;height:26px;padding:0 9px;font-size:12px}
+body.horizontal button.hidden-control{display:none!important}
 canvas{display:block;width:100%;height:100%}
-.phase-panel{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:none;align-items:center;gap:10px;width:min(92%,640px);padding:8px 12px;border:1px solid #b8c8d2;border-radius:10px;background:#ffffffed;box-shadow:0 4px 15px #2638461f;font-size:13px}
-.phase-panel.visible{display:flex}.phase-panel label{font-weight:750;white-space:nowrap}.phase-panel input{flex:1;min-width:120px}.phase-value{min-width:64px;text-align:right;font-weight:800;color:#176a89}
-.controls{min-height:58px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid #c7d2da;background:#f8fafb}
-button{appearance:none;border:1px solid #8da3b2;background:#fff;color:#203848;border-radius:8px;padding:8px 12px;font:700 13px/1 system-ui;cursor:pointer;box-shadow:0 1px 2px #00000010}
-button:hover{background:#edf5fa} button.active{background:#1b789b;color:#fff;border-color:#176a89} button.primary{background:#226b92;color:#fff;border-color:#185877}
+.phase-panel{position:absolute;left:50%;bottom:64px;z-index:6;transform:translateX(-50%);display:none;align-items:center;gap:9px;width:min(86%,430px);padding:7px 10px;border:1px solid #ffffff2e;border-radius:12px;background:linear-gradient(#26313dd9,#111820e8);box-shadow:0 7px 24px #0005,inset 0 1px 0 #ffffff35;backdrop-filter:blur(10px);color:#e9f2f8;font-size:12px}
+.phase-panel.visible{display:flex}.phase-panel label{font-weight:800;white-space:nowrap}.phase-panel input{flex:1;min-width:90px;accent-color:#4aa3d8}.phase-value{min-width:44px;text-align:right;font-weight:850;color:#91d7ff}
+.controls{position:absolute;left:50%;bottom:9px;z-index:5;min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;max-width:calc(100% - 22px);padding:7px 10px;border:1px solid #ffffff2e;border-radius:13px;background:linear-gradient(#26313dd9,#111820e8);box-shadow:0 7px 24px #0005,inset 0 1px 0 #ffffff35;backdrop-filter:blur(10px);transform:translateX(-50%)}
+button{appearance:none;min-width:34px;height:28px;border:1px solid #5a6671;background:linear-gradient(#27313a,#151b22);color:#e9f2f8;border-radius:999px;padding:0 10px;font:800 12px/1 system-ui;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff1f,0 1px 3px #0004}
+button:hover{background:linear-gradient(#344453,#1c2530);border-color:#7da9c7} button.active{background:linear-gradient(#1d6a94,#124964);color:#fff;border-color:#6db9e5;box-shadow:0 0 0 1px #2a9bd64d,inset 0 1px 0 #ffffff30} button.primary{min-width:42px;background:linear-gradient(#313b46,#1b232c);border-color:#6a7682;color:#fff}
 button:disabled{opacity:.42;cursor:not-allowed}@media(max-width:680px){button{font-size:12px;padding:8px 9px}.controls{gap:5px}.phase-panel{font-size:12px}}
 @media print{body{padding:0;background:#fff}.app{box-shadow:none;border:0;border-radius:0;width:100%}.controls,.phase-panel{display:none!important}}
 </style>
@@ -32,14 +39,14 @@ button:disabled{opacity:.42;cursor:not-allowed}@media(max-width:680px){button{fo
     </div>
   </section>
   <nav class="controls" aria-label="Χειριστήρια σκηνής">
-    <button id="playBtn" class="primary">⏸ Παύση</button>
-    <button id="resetBtn">|◀ Επαναφορά</button>
-    <button id="axisBtn">Άξονας</button>
-    <button id="circleBtn">Κύκλος</button>
-    <button id="projectionBtn">Προβολή</button>
-    <button id="graphBtn">Γράφημα</button>
-    <button id="phaseBtn">Αρχική φάση</button>
-    <button id="nowBtn">Τώρα → t=0</button>
+    <button id="resetBtn" title="Επαναφορά">|◀</button>
+    <button id="playBtn" class="primary" title="Έναρξη / παύση">⏸</button>
+    <button id="axisBtn" title="Άξονας / θέση">Άξ.</button>
+    <button id="circleBtn" title="Κυκλικό μοντέλο / ταχύτητα">Κύκ.</button>
+    <button id="projectionBtn" title="Προβολή / επιτάχυνση">Προβ.</button>
+    <button id="graphBtn" title="Γράφημα / ενέργειες">Γρ.</button>
+    <button id="phaseBtn" title="Αρχική φάση">φ₀</button>
+    <button id="nowBtn" title="Τώρα → t=0">t₀</button>
   </nav>
 </main>
 <script>
@@ -50,17 +57,24 @@ const ids=['playBtn','resetBtn','axisBtn','circleBtn','projectionBtn','graphBtn'
 const els=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
 const params=new URLSearchParams(location.search);
 const presets={
- spring:{axis:false,circle:false,projection:false,graph:false,phaseMode:false},
- spring_axis:{axis:true,circle:false,projection:false,graph:false,phaseMode:false},
- spring_circle:{axis:true,circle:true,projection:false,graph:false,phaseMode:false},
- spring_projection:{axis:true,circle:true,projection:true,graph:false,phaseMode:false},
- spring_graph:{axis:true,circle:true,projection:true,graph:true,phaseMode:false},
- spring_phase:{axis:true,circle:true,projection:true,graph:true,phaseMode:true}
+ spring:{horizontal:false,axis:false,circle:false,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ spring_axis:{horizontal:false,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ spring_circle:{horizontal:false,axis:true,circle:true,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ spring_projection:{horizontal:false,axis:true,circle:true,projection:true,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ spring_graph:{horizontal:false,axis:true,circle:true,projection:true,graph:true,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ spring_phase:{horizontal:false,axis:true,circle:true,projection:true,graph:true,phaseMode:true,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ body_axis:{horizontal:true,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:true,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ body_axis_position_time:{horizontal:true,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:true,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ body_axis_position_velocity:{horizontal:true,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:true,showVelocity:true,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
+ body_axis_position_velocity_acceleration:{horizontal:true,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:true,showVelocity:true,showAcceleration:true,showForce:false,showEnergy:false,showClock:true}
 };
 const initialPhiDeg=Number.isFinite(+params.get('phi'))?((+params.get('phi')%360)+360)%360:90;
-const state={running:params.get('play')!=='0',axis:false,circle:false,projection:false,graph:false,phaseMode:false,t:0,last:performance.now(),period:4,amplitude:92,phi0:initialPhiDeg*Math.PI/180,transition:1};
+const state={running:params.get('play')!=='0',horizontal:false,axis:false,circle:false,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true,t:0,last:performance.now(),period:4,amplitude:92,phi0:initialPhiDeg*Math.PI/180,transition:1};
 function normalizeAngle(a){const two=2*Math.PI;return ((a%two)+two)%two}
-function applyPreset(name){Object.assign(state,presets[name]||presets.spring);state.transition=0;if(params.has('play'))state.running=params.get('play')!=='0';updateButtons()}
+function boolParam(name,fallback){if(!params.has(name))return fallback;const v=String(params.get(name)).toLowerCase();return v==='1'||v==='true'||v==='yes'||v==='on'}
+function applyQueryFlags(){for(const key of ['showPosition','showVelocity','showAcceleration','showForce','showEnergy','showClock'])if(params.has(key))state[key]=boolParam(key,state[key]);if(params.has('t')&&Number.isFinite(+params.get('t')))state.t=+params.get('t')}
+function allowedControls(){return new Set(String(params.get('allowedControls')||'togglePosition,toggleVelocity,toggleAcceleration,toggleEnergy').split(',').map(s=>s.trim()).filter(Boolean))}
+function applyPreset(name){Object.assign(state,presets[name]||presets.spring);applyQueryFlags();state.transition=0;if(params.has('play'))state.running=params.get('play')!=='0';updateButtons()}
 applyPreset(params.get('state')||params.get('preset')||'spring');
 function setFlag(key,val){state[key]=val;
  if(key==='projection'&&val){state.circle=true;state.axis=true}
@@ -72,18 +86,41 @@ function setFlag(key,val){state[key]=val;
  state.transition=0;updateButtons();
 }
 function updateButtons(){
- els.playBtn.textContent=state.running?'⏸ Παύση':'▶ Έναρξη';
- for(const k of ['axis','circle','projection','graph'])els[k+'Btn'].classList.toggle('active',state[k]);
+ els.playBtn.textContent=state.running?'⏸':'▶';
+ document.body.classList.toggle('horizontal',state.horizontal);
+ if(state.horizontal&&canvas.height!==260){canvas.width=900;canvas.height=260}
+ if(!state.horizontal&&canvas.height!==540){canvas.width=900;canvas.height=540}
+ els.axisBtn.textContent=state.horizontal?'x':'Άξ.';
+ els.circleBtn.textContent=state.horizontal?'υ':'Κύκ.';
+ els.projectionBtn.textContent=state.horizontal?'α':'Προβ.';
+ els.graphBtn.textContent=state.horizontal?'E':'Γρ.';
+ els.axisBtn.title=state.horizontal?'Εμφάνιση θέσης x':'Εμφάνιση άξονα αναφοράς';
+ els.circleBtn.title=state.horizontal?'Εμφάνιση ταχύτητας υ':'Εμφάνιση κυκλικού μοντέλου';
+ els.projectionBtn.title=state.horizontal?'Εμφάνιση επιτάχυνσης α':'Εμφάνιση προβολής';
+ els.graphBtn.title=state.horizontal?'Εμφάνιση ενεργειών':'Εμφάνιση γραφήματος x(t)';
+ if(state.horizontal){
+  const allowed=allowedControls();
+  els.axisBtn.classList.toggle('hidden-control',!allowed.has('togglePosition'));
+  els.circleBtn.classList.toggle('hidden-control',!allowed.has('toggleVelocity'));
+  els.projectionBtn.classList.toggle('hidden-control',!allowed.has('toggleAcceleration'));
+  els.graphBtn.classList.toggle('hidden-control',!allowed.has('toggleEnergy'));
+ }else for(const button of [els.axisBtn,els.circleBtn,els.projectionBtn,els.graphBtn])button.classList.remove('hidden-control');
+ if(state.horizontal){
+  els.axisBtn.classList.toggle('active',state.showPosition);
+  els.circleBtn.classList.toggle('active',state.showVelocity);
+  els.projectionBtn.classList.toggle('active',state.showAcceleration);
+  els.graphBtn.classList.toggle('active',state.showEnergy);
+ }else for(const k of ['axis','circle','projection','graph'])els[k+'Btn'].classList.toggle('active',state[k]);
  els.phaseBtn.classList.toggle('active',state.phaseMode);els.phasePanel.classList.toggle('visible',state.phaseMode);
- els.projectionBtn.disabled=!state.circle;els.graphBtn.disabled=!state.projection;els.phaseBtn.disabled=!state.graph;els.nowBtn.disabled=!state.circle;
+ els.projectionBtn.disabled=state.horizontal?false:!state.circle;els.graphBtn.disabled=state.horizontal?false:!state.projection;els.phaseBtn.disabled=!state.graph;els.nowBtn.disabled=!state.circle;
  const deg=Math.round(normalizeAngle(state.phi0)*180/Math.PI)%360;els.phaseRange.value=String(deg);els.phaseValue.textContent=`${deg}°`;
 }
 els.playBtn.onclick=()=>{state.running=!state.running;state.last=performance.now();updateButtons()};
 els.resetBtn.onclick=()=>{state.t=0;state.phi0=Math.PI/2;state.running=false;state.last=performance.now();updateButtons()};
-els.axisBtn.onclick=()=>setFlag('axis',!state.axis);
-els.circleBtn.onclick=()=>setFlag('circle',!state.circle);
-els.projectionBtn.onclick=()=>setFlag('projection',!state.projection);
-els.graphBtn.onclick=()=>setFlag('graph',!state.graph);
+els.axisBtn.onclick=()=>state.horizontal?(state.showPosition=!state.showPosition,updateButtons()):setFlag('axis',!state.axis);
+els.circleBtn.onclick=()=>state.horizontal?(state.showVelocity=!state.showVelocity,updateButtons()):setFlag('circle',!state.circle);
+els.projectionBtn.onclick=()=>state.horizontal?(state.showAcceleration=!state.showAcceleration,updateButtons()):setFlag('projection',!state.projection);
+els.graphBtn.onclick=()=>state.horizontal?(state.showEnergy=!state.showEnergy,updateButtons()):setFlag('graph',!state.graph);
 els.phaseBtn.onclick=()=>setFlag('phaseMode',!state.phaseMode);
 els.nowBtn.onclick=()=>{state.phi0=normalizeAngle(2*Math.PI*state.t/state.period+state.phi0);state.t=0;state.phaseMode=true;state.last=performance.now();updateButtons()};
 els.phaseRange.addEventListener('input',()=>{state.phi0=Number(els.phaseRange.value)*Math.PI/180;state.t=0;state.running=false;state.phaseMode=true;state.last=performance.now();updateButtons()});
@@ -109,7 +146,19 @@ function drawCurrentPoint(x,y,r=6,color='#c63e37'){ctx.save();ctx.fillStyle=colo
 function drawOutlinePoint(x,y,r=7,color='#a56a1f'){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.restore()}
 function drawGhostMass(x,y){ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=1.8;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(x-27,y-22,54,44,7);ctx.stroke();ctx.restore();text('t=0',x+34,y-28,12,'left','#8c5818',700)}
 function drawPhaseReadout(phi0,omega,A){const deg=Math.round(normalizeAngle(phi0)*180/Math.PI)%360,x0=Math.sin(phi0),v0=Math.cos(phi0),dir=Math.abs(v0)<.015?'υ₀ = 0':v0>0?'υ₀ > 0':'υ₀ < 0';ctx.save();ctx.fillStyle='#ffffffed';ctx.strokeStyle='#c7d2da';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(328,62,244,94,9);ctx.fill();ctx.stroke();ctx.restore();text(`φ₀ = ${deg}°`,343,80,14,'left','#176a89',800);text(`x₀/A = ${x0.toFixed(2)}`,343,102,13,'left','#334d5b',700);text(dir,343,123,13,'left','#334d5b',700);text('x=A·ημ(ωt+φ₀)',343,145,13,'left','#334d5b',750)}
+function drawArrowXY(x1,y1,x2,y2,color='#16845c',label=''){line(x1,y1,x2,y2,color,2.6);ctx.save();ctx.fillStyle=color;const a=Math.atan2(y2-y1,x2-x1);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-9*Math.cos(a-.45),y2-9*Math.sin(a-.45));ctx.lineTo(x2-9*Math.cos(a+.45),y2-9*Math.sin(a+.45));ctx.closePath();ctx.fill();ctx.restore();if(label)text(label,x2+(x2>=x1?16:-16),y2-13,15,x2>=x1?'left':'right',color,850)}
+function drawHorizontal(){
+ const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;const W=canvas.width,H=canvas.height,cy=Math.round(H*.52),origin=Math.round(W*.5),A=Math.min(220,W*.32),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,x=A*Math.sin(phase),v=A*Math.cos(phase),acc=-x;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);line(origin-A-55,cy,origin+A+55,cy,'#60727e',2);drawArrowXY(origin+A+37,cy,origin+A+57,cy,'#60727e','x');
+ for(const [mark,label] of [[-1,'−A'],[-.5,''],[0,'0'],[.5,''],[1,'+A']]){const px=origin+mark*A;line(px,cy-9,px,cy+9,'#93a4af',1.4);if(label)text(label,px,cy+25,13,'center','#526978',750)}
+ line(origin+x,cy-58,origin+x,cy+54,'#b7c5ce',1.2,[5,5]);if(state.showPosition)drawArrowXY(origin,cy+42,origin+x,cy+42,'#226b92','x');if(state.showVelocity&&Math.abs(v)>4)drawArrowXY(origin+x,cy-32,origin+x+Math.sign(v)*Math.min(Math.abs(v)*.5,105),cy-32,'#16845c','υ');if(state.showAcceleration&&Math.abs(acc)>4)drawArrowXY(origin+x,cy-56,origin+x+Math.sign(acc)*Math.min(Math.abs(acc)*.5,105),cy-56,'#c63e37','α');if(state.showForce&&Math.abs(acc)>4)drawArrowXY(origin+x,cy+66,origin+x+Math.sign(acc)*Math.min(Math.abs(acc)*.42,92),cy+66,'#8a4ab8','ΣF');
+ ctx.save();ctx.fillStyle='#3c92b7';ctx.strokeStyle='#174d68';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(origin+x-28,cy-23,56,46,8);ctx.fill();ctx.stroke();ctx.restore();text('m',origin+x,cy,18,'center','#fff',850);
+ if(state.showClock){ctx.save();ctx.fillStyle='#ffcc00';ctx.strokeStyle='#5f4c00';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(18,14,126,32,6);ctx.fill();ctx.stroke();ctx.restore();text(`t = ${state.t.toFixed(2)} s`,81,31,14,'center','#17232d',800)}
+ if(state.showEnergy){const k=(x/A)**2,kin=1-k,bx=W-142,by=18;for(const [i,name,val,color] of [[0,'U',k,'#c63e37'],[1,'K',kin,'#16845c']]){text(name,bx,by+i*23+6,12,'left','#334d5b',800);ctx.fillStyle='#dfe7ed';ctx.fillRect(bx+18,by+i*23,96,12);ctx.fillStyle=color;ctx.fillRect(bx+18,by+i*23,96*Math.max(0,Math.min(1,val)),12)}}
+ text('Οριζόντια ΑΑΤ σώματος',origin,H-28,15,'center','#334d5b',750);requestAnimationFrame(draw);
+}
 function draw(){
+ if(state.horizontal){drawHorizontal();return}
  const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;state.transition=Math.min(1,state.transition+dt*2.4);const u=ease(state.transition);
  const W=canvas.width,H=canvas.height,cy=260,A=state.amplitude,omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0;
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);
@@ -126,7 +175,7 @@ function draw(){
  requestAnimationFrame(draw);
 }
 updateButtons();requestAnimationFrame(draw);
-window.AAT_BOOK_SCENE={version:'book-scene-v4',getState:()=>({running:state.running,axis:state.axis,circle:state.circle,projection:state.projection,graph:state.graph,phaseMode:state.phaseMode,t:state.t,phase0Deg:normalizeAngle(state.phi0)*180/Math.PI}),applyState:(next={})=>{for(const k of ['axis','circle','projection','graph','phaseMode'])if(k in next)state[k]=!!next[k];if('play'in next)state.running=!!next.play;if('t'in next&&Number.isFinite(+next.t))state.t=+next.t;if('phase0Deg'in next&&Number.isFinite(+next.phase0Deg))state.phi0=normalizeAngle(+next.phase0Deg*Math.PI/180);state.transition=1;updateButtons()},setPreset:applyPreset,setObservationNow:()=>els.nowBtn.click(),snapshot:()=>canvas.toDataURL('image/png')};
+window.AAT_BOOK_SCENE={version:'book-scene-v4',getState:()=>({running:state.running,horizontal:state.horizontal,axis:state.axis,circle:state.circle,projection:state.projection,graph:state.graph,phaseMode:state.phaseMode,showPosition:state.showPosition,showVelocity:state.showVelocity,showAcceleration:state.showAcceleration,showForce:state.showForce,showEnergy:state.showEnergy,showClock:state.showClock,t:state.t,phase0Deg:normalizeAngle(state.phi0)*180/Math.PI}),applyState:(next={})=>{for(const k of ['axis','circle','projection','graph','phaseMode','showPosition','showVelocity','showAcceleration','showForce','showEnergy','showClock'])if(k in next)state[k]=!!next[k];if('play'in next)state.running=!!next.play;if('t'in next&&Number.isFinite(+next.t))state.t=+next.t;if('phase0Deg'in next&&Number.isFinite(+next.phase0Deg))state.phi0=normalizeAngle(+next.phase0Deg*Math.PI/180);state.transition=1;updateButtons()},setPreset:applyPreset,setObservationNow:()=>els.nowBtn.click(),snapshot:()=>canvas.toDataURL('image/png')};
 window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='book-scene-apply')window.AAT_BOOK_SCENE.applyState(m.state||{});if(m.type==='book-scene-preset')applyPreset(m.preset);if(m.type==='book-scene-now')window.AAT_BOOK_SCENE.setObservationNow();if(m.type==='book-scene-snapshot')e.source?.postMessage({type:'book-scene-snapshot-result',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*');if(m.type==='book-scene:capture-print-snapshot'&&m.protocol==='book-scene-v1'){e.source?.postMessage({type:'book-scene:print-snapshot',protocol:'book-scene-v1',executedPath:'book-scene-v1',requestId:m.requestId||null,dataUrl:canvas.toDataURL('image/png')},'*')}});
 window.parent?.postMessage({type:'book-scene-ready',version:'book-scene-v4',scene:'spring_shm'},'*');
 })();
