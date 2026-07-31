@@ -41,12 +41,12 @@ button:disabled{opacity:.42;cursor:not-allowed}
   <nav class="controls" aria-label="Χειριστήρια σκηνής">
     <button id="resetBtn" title="Επαναφορά">|◀</button>
     <button id="playBtn" class="primary" title="Έναρξη / παύση">⏸</button>
-    <button id="axisBtn" title="Άξονας / θέση">Άξ.</button>
-    <button id="circleBtn" title="Κυκλικό μοντέλο / ταχύτητα">Κύκ.</button>
-    <button id="projectionBtn" title="Προβολή / επιτάχυνση">Προβ.</button>
-    <button id="graphBtn" title="Γράφημα / ενέργειες">Γρ.</button>
+    <button id="axisBtn" title="Άξονας / θέση">x↕</button>
+    <button id="circleBtn" title="Κυκλικό μοντέλο / ταχύτητα">φ↻</button>
+    <button id="projectionBtn" title="Προβολή / επιτάχυνση">⊥x</button>
+    <button id="graphBtn" title="Γράφημα / ενέργειες">x(t)</button>
     <button id="phaseBtn" title="Αρχική φάση">φ₀</button>
-    <button id="nowBtn" title="Τώρα → t=0">t₀</button>
+    <button id="nowBtn" title="Τώρα → t=0">t→0</button>
   </nav>
 </main>
 <script>
@@ -90,13 +90,14 @@ function updateButtons(){
  document.body.classList.toggle('horizontal',state.horizontal);
  if(state.horizontal&&canvas.height!==260){canvas.width=900;canvas.height=260}
  if(!state.horizontal&&canvas.height!==540){canvas.width=900;canvas.height=540}
- els.axisBtn.textContent=state.horizontal?'x':'Άξ.';
- els.circleBtn.textContent=state.horizontal?'υ':'Κύκ.';
- els.projectionBtn.textContent=state.horizontal?'α':'Προβ.';
- els.graphBtn.textContent=state.horizontal?'E':'Γρ.';
- els.axisBtn.title=state.horizontal?'Εμφάνιση θέσης x':'Εμφάνιση άξονα αναφοράς';
- els.circleBtn.title=state.horizontal?'Εμφάνιση ταχύτητας υ':'Εμφάνιση κυκλικού μοντέλου';
- els.projectionBtn.title=state.horizontal?'Εμφάνιση επιτάχυνσης α':'Εμφάνιση προβολής';
+ els.axisBtn.textContent=state.horizontal?'x':'x↕';
+ els.circleBtn.textContent=state.horizontal?'υ':'φ↻';
+ els.projectionBtn.textContent=state.horizontal?'α':'⊥x';
+ els.graphBtn.textContent=state.horizontal?'E':'x(t)';
+ els.nowBtn.textContent='t→0';
+ els.axisBtn.title=state.horizontal?'Εμφάνιση θέσης x':'Εμφάνιση άξονα αναφοράς x';
+ els.circleBtn.title=state.horizontal?'Εμφάνιση ταχύτητας υ':'Εμφάνιση κυκλικού μοντέλου / φάσης';
+ els.projectionBtn.title=state.horizontal?'Εμφάνιση επιτάχυνσης α':'Εμφάνιση προβολής στον άξονα x';
  els.graphBtn.title=state.horizontal?'Εμφάνιση ενεργειών':'Εμφάνιση γραφήματος x(t)';
  if(state.horizontal){
   const allowed=allowedControls();
