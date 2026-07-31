@@ -6,25 +6,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ΑΑΤ — ταλαντωτής (m,k), κυκλικό μοντέλο και αρχική φάση</title>
 <style>
-:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#17232d;background:#eef3f6}
-*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#eef3f6}
-body{display:grid;place-items:center;padding:10px}
-.app{position:relative;width:min(100%,900px);display:grid;grid-template-rows:auto auto auto;background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
-.stage-wrap{position:relative;width:100%;aspect-ratio:5/3;background:linear-gradient(#fbfdfe,#f2f6f8)}
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#17232d;background:#fff}
+*{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;min-height:0;background:#fff;overflow:hidden}
+body{display:grid;place-items:stretch;padding:0}
+.app{position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto auto;background:#fff;border:0;border-radius:0;overflow:hidden;box-shadow:none}
+.stage-wrap{position:relative;width:100%;height:100%;min-height:0;background:linear-gradient(#fbfdfe,#f2f6f8);overflow:hidden}
 body.horizontal{padding:0;background:#fff}
 body.horizontal .app{width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;border:0;border-radius:0;box-shadow:none}
 body.horizontal .stage-wrap{aspect-ratio:auto;min-height:0;height:100%}
 body.horizontal #phaseBtn,body.horizontal #nowBtn,body.horizontal #phasePanel{display:none!important}
-body.horizontal .controls{min-height:40px;padding:6px 9px;gap:5px}
-body.horizontal button{min-width:34px;height:26px;padding:0 9px;font-size:12px}
+body.horizontal .controls{min-height:clamp(26px,18vh,40px);padding:clamp(3px,2.4vh,6px) clamp(5px,2.2vw,9px);gap:clamp(3px,1vw,5px)}
+body.horizontal button{min-width:clamp(24px,8vw,34px);height:clamp(20px,13vh,26px);padding:0 clamp(5px,2vw,9px);font-size:clamp(9px,3.1vw,12px)}
 body.horizontal button.hidden-control{display:none!important}
-canvas{display:block;width:100%;height:100%}
-.phase-panel{display:none;align-items:center;justify-content:center;gap:9px;width:100%;padding:7px 10px;border-top:1px solid #26323d;background:#101821;color:#e9f2f8;font-size:12px}
-.phase-panel.visible{display:flex}.phase-panel label{font-weight:800;white-space:nowrap}.phase-panel input{flex:1;min-width:90px;accent-color:#4aa3d8}.phase-value{min-width:44px;text-align:right;font-weight:850;color:#91d7ff}
-.controls{min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%;padding:7px 10px;border-top:1px solid #222f3a;background:#0b1118;box-shadow:inset 0 1px 0 #ffffff10}
-button{appearance:none;min-width:34px;height:28px;border:1px solid #2f3c48;background:#151d26;color:#e9f2f8;border-radius:999px;padding:0 10px;font:800 12px/1 system-ui;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff12}
-button:hover{background:#1d2a35;border-color:#5f8fb0} button.active{background:#14597a;color:#fff;border-color:#60add9;box-shadow:0 0 0 1px #2a9bd64d,inset 0 1px 0 #ffffff22} button.primary{min-width:42px;background:#202b36;border-color:#4c5d6d;color:#fff}
-button:disabled{opacity:.42;cursor:not-allowed}@media(max-width:680px){button{font-size:12px;padding:8px 9px}.controls{gap:5px}.phase-panel{font-size:12px}}
+canvas{display:block;width:100%;height:100%;object-fit:contain}
+.phase-panel{display:none;align-items:center;justify-content:center;gap:clamp(5px,1.2vw,9px);width:100%;min-height:clamp(27px,7.5vh,38px);padding:clamp(4px,1.6vh,7px) clamp(7px,2vw,10px);border-top:1px solid #26323d;background:#101821;color:#e9f2f8;font-size:clamp(10px,2.3vw,12px)}
+.phase-panel.visible{display:flex}.phase-panel label{font-weight:800;white-space:nowrap}.phase-panel input{flex:1;min-width:80px;accent-color:#4aa3d8}.phase-value{min-width:38px;text-align:right;font-weight:850;color:#91d7ff}
+.controls{min-height:clamp(30px,8.5vh,46px);display:flex;align-items:center;justify-content:center;gap:clamp(3px,1vw,6px);flex-wrap:wrap;width:100%;padding:clamp(4px,1.6vh,7px) clamp(6px,2vw,10px);border-top:1px solid #222f3a;background:#0b1118;box-shadow:inset 0 1px 0 #ffffff10}
+button{appearance:none;min-width:clamp(26px,6vw,34px);height:clamp(22px,5.5vh,28px);border:1px solid #2f3c48;background:#151d26;color:#e9f2f8;border-radius:999px;padding:0 clamp(6px,1.8vw,10px);font:800 clamp(10px,2.2vw,12px)/1 system-ui;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff12}
+button:hover{background:#1d2a35;border-color:#5f8fb0} button.active{background:#14597a;color:#fff;border-color:#60add9;box-shadow:0 0 0 1px #2a9bd64d,inset 0 1px 0 #ffffff22} button.primary{min-width:clamp(32px,7vw,42px);background:#202b36;border-color:#4c5d6d;color:#fff}
+button:disabled{opacity:.42;cursor:not-allowed}
 @media print{body{padding:0;background:#fff}.app{box-shadow:none;border:0;border-radius:0;width:100%}.controls,.phase-panel{display:none!important}}
 </style>
 </head>
