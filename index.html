@@ -9,21 +9,21 @@
 :root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#17232d;background:#eef3f6}
 *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#eef3f6}
 body{display:grid;place-items:center;padding:10px}
-.app{position:relative;width:min(100%,900px);background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
+.app{position:relative;width:min(100%,900px);display:grid;grid-template-rows:auto auto;background:#fff;border:1px solid #bac8d2;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px #26384624}
 .stage-wrap{position:relative;width:100%;aspect-ratio:5/3;background:linear-gradient(#fbfdfe,#f2f6f8)}
 body.horizontal{padding:0;background:#fff}
 body.horizontal .app{width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;border:0;border-radius:0;box-shadow:none}
-body.horizontal .stage-wrap{aspect-ratio:auto;min-height:0;flex:1}
+body.horizontal .stage-wrap{aspect-ratio:auto;min-height:0;height:100%}
 body.horizontal #phaseBtn,body.horizontal #nowBtn,body.horizontal #phasePanel{display:none!important}
 body.horizontal .controls{min-height:40px;padding:6px 9px;gap:5px}
 body.horizontal button{min-width:34px;height:26px;padding:0 9px;font-size:12px}
 body.horizontal button.hidden-control{display:none!important}
 canvas{display:block;width:100%;height:100%}
-.phase-panel{position:absolute;left:50%;bottom:64px;z-index:6;transform:translateX(-50%);display:none;align-items:center;gap:9px;width:min(86%,430px);padding:7px 10px;border:1px solid #ffffff2e;border-radius:12px;background:linear-gradient(#26313dd9,#111820e8);box-shadow:0 7px 24px #0005,inset 0 1px 0 #ffffff35;backdrop-filter:blur(10px);color:#e9f2f8;font-size:12px}
+.phase-panel{position:absolute;left:12px;bottom:12px;z-index:6;display:none;align-items:center;gap:9px;width:min(58%,430px);padding:7px 10px;border:1px solid #26323d;border-radius:10px;background:#101821e8;box-shadow:0 5px 18px #0004,inset 0 1px 0 #ffffff18;color:#e9f2f8;font-size:12px}
 .phase-panel.visible{display:flex}.phase-panel label{font-weight:800;white-space:nowrap}.phase-panel input{flex:1;min-width:90px;accent-color:#4aa3d8}.phase-value{min-width:44px;text-align:right;font-weight:850;color:#91d7ff}
-.controls{position:absolute;left:50%;bottom:9px;z-index:5;min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;max-width:calc(100% - 22px);padding:7px 10px;border:1px solid #ffffff2e;border-radius:13px;background:linear-gradient(#26313dd9,#111820e8);box-shadow:0 7px 24px #0005,inset 0 1px 0 #ffffff35;backdrop-filter:blur(10px);transform:translateX(-50%)}
-button{appearance:none;min-width:34px;height:28px;border:1px solid #5a6671;background:linear-gradient(#27313a,#151b22);color:#e9f2f8;border-radius:999px;padding:0 10px;font:800 12px/1 system-ui;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff1f,0 1px 3px #0004}
-button:hover{background:linear-gradient(#344453,#1c2530);border-color:#7da9c7} button.active{background:linear-gradient(#1d6a94,#124964);color:#fff;border-color:#6db9e5;box-shadow:0 0 0 1px #2a9bd64d,inset 0 1px 0 #ffffff30} button.primary{min-width:42px;background:linear-gradient(#313b46,#1b232c);border-color:#6a7682;color:#fff}
+.controls{min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%;padding:7px 10px;border-top:1px solid #222f3a;background:#0b1118;box-shadow:inset 0 1px 0 #ffffff10}
+button{appearance:none;min-width:34px;height:28px;border:1px solid #2f3c48;background:#151d26;color:#e9f2f8;border-radius:999px;padding:0 10px;font:800 12px/1 system-ui;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff12}
+button:hover{background:#1d2a35;border-color:#5f8fb0} button.active{background:#14597a;color:#fff;border-color:#60add9;box-shadow:0 0 0 1px #2a9bd64d,inset 0 1px 0 #ffffff22} button.primary{min-width:42px;background:#202b36;border-color:#4c5d6d;color:#fff}
 button:disabled{opacity:.42;cursor:not-allowed}@media(max-width:680px){button{font-size:12px;padding:8px 9px}.controls{gap:5px}.phase-panel{font-size:12px}}
 @media print{body{padding:0;background:#fff}.app{box-shadow:none;border:0;border-radius:0;width:100%}.controls,.phase-panel{display:none!important}}
 </style>
