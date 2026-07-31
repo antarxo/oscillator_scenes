@@ -56,6 +56,7 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const ids=['playBtn','resetBtn','axisBtn','circleBtn','projectionBtn','graphBtn','phaseBtn','nowBtn','phasePanel','phaseRange','phaseValue'];
 const els=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
 const params=new URLSearchParams(location.search);
+const horizontalTextSize=Number.isFinite(+params.get('textSize'))?Math.max(8,Math.min(18,+params.get('textSize'))):11;
 const presets={
  spring:{horizontal:false,axis:false,circle:false,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
  spring_axis:{horizontal:false,axis:true,circle:false,projection:false,graph:false,phaseMode:false,showPosition:false,showVelocity:false,showAcceleration:false,showForce:false,showEnergy:false,showClock:true},
@@ -130,7 +131,10 @@ els.phaseRange.addEventListener('input',()=>{state.phi0=Number(els.phaseRange.va
 
 function lerp(a,b,u){return a+(b-a)*u}function ease(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2}
 function line(x1,y1,x2,y2,stroke='#263b48',w=2,dash=[]){ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
-function text(s,x,y,size=16,align='center',color='#17232d',weight=600){ctx.save();ctx.fillStyle=color;ctx.font=`${weight} ${size}px system-ui`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(s,x,y);ctx.restore()}
+function displayScale(){const rect=canvas.getBoundingClientRect();return Math.max(.1,Math.min(2,(rect.width||canvas.width)/canvas.width))}
+function textSize(size){return state.horizontal?Math.max(size,horizontalTextSize/displayScale()):size}
+function textFamily(){return state.horizontal?'Calibri, "Segoe UI", Arial, sans-serif':'system-ui'}
+function text(s,x,y,size=16,align='center',color='#17232d',weight=600){ctx.save();ctx.fillStyle=color;ctx.font=`${weight} ${textSize(size)}px ${textFamily()}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(s,x,y);ctx.restore()}
 function drawArrow(x,y,dy,color='#16845c'){line(x,y,x,y+dy,color,2.4);ctx.save();ctx.fillStyle=color;ctx.beginPath();const sy=Math.sign(dy)||1;ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-8*sy);ctx.lineTo(x+5,y+dy-8*sy);ctx.closePath();ctx.fill();ctx.restore()}
 function drawSpring(x,top,bottom){const coils=18,amp=13;ctx.save();ctx.strokeStyle='#526978';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,top);for(let i=1;i<=coils;i++){const y=top+(bottom-top)*i/coils;ctx.lineTo(x+(i%2?amp:-amp),y)}ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();text('k',x+25,(top+bottom)/2,17,'left','#344b59',750)}
 function drawMass(x,y){ctx.save();ctx.fillStyle='#3c92b7';ctx.strokeStyle='#174d68';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-27,y-22,54,44,7);ctx.fill();ctx.stroke();ctx.restore();text('m',x,y,18,'center','#fff',800)}
