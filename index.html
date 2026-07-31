@@ -10,7 +10,7 @@
 *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;min-height:0;background:#fff;overflow:hidden}
 body{display:grid;place-items:stretch;padding:0}
 .app{position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto auto;background:#fff;border:0;border-radius:0;overflow:hidden;box-shadow:none}
-.stage-wrap{position:relative;width:100%;height:100%;min-height:0;background:linear-gradient(#fbfdfe,#f2f6f8);overflow:hidden}
+.stage-wrap{position:relative;width:100%;height:100%;min-height:0;background:linear-gradient(#fbfdfe,#f2f6f8);overflow:hidden;cursor:pointer}
 body.horizontal{padding:0;background:#fff}
 body.horizontal .app{width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;border:0;border-radius:0;box-shadow:none}
 body.horizontal .stage-wrap{aspect-ratio:auto;min-height:0;height:100%}
@@ -115,7 +115,9 @@ function updateButtons(){
  els.projectionBtn.disabled=state.horizontal?false:!state.circle;els.graphBtn.disabled=state.horizontal?false:!state.projection;els.phaseBtn.disabled=!state.graph;els.nowBtn.disabled=!state.circle;
  const deg=Math.round(normalizeAngle(state.phi0)*180/Math.PI)%360;els.phaseRange.value=String(deg);els.phaseValue.textContent=`${deg}°`;
 }
-els.playBtn.onclick=()=>{state.running=!state.running;state.last=performance.now();updateButtons()};
+function toggleRunning(){state.running=!state.running;state.last=performance.now();updateButtons()}
+els.playBtn.onclick=toggleRunning;
+document.getElementById('stageWrap').onclick=toggleRunning;
 els.resetBtn.onclick=()=>{state.t=0;state.phi0=Math.PI/2;state.running=false;state.last=performance.now();updateButtons()};
 els.axisBtn.onclick=()=>state.horizontal?(state.showPosition=!state.showPosition,updateButtons()):setFlag('axis',!state.axis);
 els.circleBtn.onclick=()=>state.horizontal?(state.showVelocity=!state.showVelocity,updateButtons()):setFlag('circle',!state.circle);
