@@ -90,7 +90,7 @@ function updateButtons(){
  els.playBtn.textContent=state.running?'⏸':'▶';
  document.body.classList.toggle('horizontal',state.horizontal);
  if(state.horizontal&&canvas.height!==260){canvas.width=900;canvas.height=260}
- if(!state.horizontal&&canvas.height!==540){canvas.width=900;canvas.height=540}
+ if(!state.horizontal&&canvas.height!==360){canvas.width=900;canvas.height=360}
  els.axisBtn.textContent=state.horizontal?'x':'x↕';
  els.circleBtn.textContent=state.horizontal?'υ':'φ↻';
  els.projectionBtn.textContent=state.horizontal?'α':'⊥x';
@@ -190,21 +190,21 @@ function drawHorizontal(){
 function draw(){
  if(state.horizontal){drawHorizontal();return}
  const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;state.transition=Math.min(1,state.transition+dt*2.4);const u=ease(state.transition);
- const W=canvas.width,H=canvas.height,cy=225,A=Math.min(state.amplitude,78),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,os=objectScale();
+ const W=canvas.width,H=canvas.height,cy=168,A=Math.min(state.amplitude,64),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,os=objectScale();
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);
  const expanded=state.circle||state.graph;
  const springHome=W*.5;
- const springTarget=state.graph?Math.min(W-125*os,W*.84):state.circle?Math.min(W-205*os,W*.72):springHome;
- const springX=lerp(springHome,springTarget,u),massY=cy-A*Math.sin(phase),top=36;
+ const springTarget=state.graph?Math.min(W-94*os,W*.88):state.circle?Math.min(W-170*os,W*.76):springHome;
+ const springX=lerp(springHome,springTarget,u),massY=cy-A*Math.sin(phase),top=22;
  let circlePoint=null,graphPoint=null,circleX=null;
- if(state.circle){circleX=state.graph?Math.max(112*os,W*.13):Math.max(210*os,W*.26);circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
- if(state.graph){const graphX=state.circle?Math.max(246*os,W*.285):Math.max(150*os,W*.17),graphW=state.circle?Math.min(300,W*.35):Math.min(410,W*.47);graphPoint=drawGraph(graphX,cy,graphW,A,phase,state.phi0,state.t,state.period)}
+ if(state.circle){circleX=state.graph?Math.max(112*os,W*.13):Math.max(205*os,W*.25);circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
+ if(state.graph){const graphX=state.circle?Math.max(258*os,W*.30):Math.max(145*os,W*.16),graphW=state.circle?Math.min(360,W*.40):Math.min(470,W*.52);graphPoint=drawGraph(graphX,cy,graphW,A,phase,state.phi0,state.t,state.period)}
  if(state.projection&&circlePoint){line(Math.min(circlePoint.px,circleX),massY,springX,massY,'#8d4f47',1.7,[7,5]);ctx.save();ctx.strokeStyle='#c63e37';ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(circleX,massY,10,0,Math.PI*2);ctx.stroke();ctx.restore();if(graphPoint)drawOutlinePoint(graphPoint.px,graphPoint.py,7,'#c63e37');drawCurrentPoint(circlePoint.px,circlePoint.py,9)}
  if(state.axis)drawAxis(springX-55,cy,A);
  line(springX-45,top,springX+45,top,'#344b59',5);drawSpring(springX,top+3,massY-24);drawMass(springX,massY);
- if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A,36,40)}
+ if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A,34,22)}
  {const label=`t = ${state.t.toFixed(2)} s`,w=Math.max(116,textWidth(label,14,800)+28);drawTextBox(label,450-w/2,14,14,{minWidth:116,minHeight:32});}
- text('Ταλαντωτής (m, k)',springX,398,16);if(state.circle)text('Κυκλικό μοντέλο',circleX,398,16);if(state.graph)text('x(t) — ταλαντωτής / προβολή',state.circle?Math.max(246*os,W*.285)+Math.min(300,W*.35)/2:Math.max(150*os,W*.17)+Math.min(410,W*.47)/2,398,15);
+ text('Ταλαντωτής (m, k)',springX,318,14);if(state.circle)text('Κυκλικό μοντέλο',circleX,318,14);if(state.graph)text('x(t) — ταλαντωτής / προβολή',state.circle?Math.max(258*os,W*.30)+Math.min(360,W*.40)/2:Math.max(145*os,W*.16)+Math.min(470,W*.52)/2,318,13);
  requestAnimationFrame(draw);
 }
 updateButtons();requestAnimationFrame(draw);
