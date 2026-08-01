@@ -52,8 +52,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 <script>
 (() => {
 'use strict';
-const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d'),stageWrap=document.getElementById('stageWrap');
-let sceneWidth=900,sceneHeight=540,sceneDpr=1;
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const ids=['playBtn','resetBtn','axisBtn','circleBtn','projectionBtn','graphBtn','phaseBtn','nowBtn','phasePanel','phaseRange','phaseValue'];
 const els=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
 const params=new URLSearchParams(location.search);
@@ -90,6 +89,8 @@ function setFlag(key,val){state[key]=val;
 function updateButtons(){
  els.playBtn.textContent=state.running?'⏸':'▶';
  document.body.classList.toggle('horizontal',state.horizontal);
+ if(state.horizontal&&canvas.height!==260){canvas.width=900;canvas.height=260}
+ if(!state.horizontal&&canvas.height!==540){canvas.width=900;canvas.height=540}
  els.axisBtn.textContent=state.horizontal?'x':'x↕';
  els.circleBtn.textContent=state.horizontal?'υ':'φ↻';
  els.projectionBtn.textContent=state.horizontal?'α':'⊥x';
@@ -129,21 +130,12 @@ els.nowBtn.onclick=()=>{state.phi0=normalizeAngle(2*Math.PI*state.t/state.period
 els.phaseRange.addEventListener('input',()=>{state.phi0=Number(els.phaseRange.value)*Math.PI/180;state.t=0;state.running=false;state.phaseMode=true;state.last=performance.now();updateButtons()});
 
 function lerp(a,b,u){return a+(b-a)*u}function ease(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2}
-function resizeCanvas(){
- const rect=stageWrap.getBoundingClientRect();
- const fallback=state.horizontal?{w:420,h:180}:{w:520,h:320};
- const w=Math.max(220,Math.round(rect.width||fallback.w)),h=Math.max(140,Math.round(rect.height||fallback.h)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
- if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)||sceneDpr!==dpr){
-  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);sceneDpr=dpr;
- }
- sceneWidth=w;sceneHeight=h;ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-function visualScale(){return Math.min(1.28,Math.max(1,420/Math.max(280,sceneWidth)))}
+function displayScale(){const rect=canvas.getBoundingClientRect();return Math.max(.1,Math.min(2,(rect.width||canvas.width)/canvas.width))}
+function visualScale(){return Math.min(1.45,Math.max(1,1/displayScale()))}
 function objectScale(){return Math.min(1.28,visualScale())}
 function scaledDash(dash=[]){return Array.isArray(dash)?dash.map(v=>v*visualScale()):dash}
 function line(x1,y1,x2,y2,stroke='#263b48',w=2,dash=[]){ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=w*visualScale();ctx.setLineDash(scaledDash(dash));ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
-function textScale(){return sceneTextSize/11}
-function textSize(size){return size*textScale()}
+function textSize(size){return Math.max(size,sceneTextSize/displayScale())}
 function textFamily(){return 'Calibri, "Segoe UI", Arial, sans-serif'}
 function text(s,x,y,size=16,align='center',color='#17232d',weight=600){ctx.save();ctx.fillStyle=color;ctx.font=`${weight} ${textSize(size)}px ${textFamily()}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(s,x,y);ctx.restore()}
 function textWidth(s,size=16,weight=600){ctx.save();ctx.font=`${weight} ${textSize(size)}px ${textFamily()}`;const w=ctx.measureText(String(s)).width;ctx.restore();return w}
@@ -152,23 +144,23 @@ function drawTextBox(label,x,y,size=14,opts={}){
  ctx.save();ctx.fillStyle=opts.fill??'#ffcc00';ctx.strokeStyle=opts.stroke??'#5f4c00';ctx.lineWidth=(opts.lineWidth??1.2)*visualScale();ctx.beginPath();ctx.roundRect(x,y,w,h,(opts.radius??6)*objectScale());ctx.fill();ctx.stroke();ctx.restore();text(label,x+w/2,y+h/2,size,'center',opts.color??'#17232d',weight);return{w,h}
 }
 function drawArrow(x,y,dy,color='#16845c'){const os=objectScale();line(x,y,x,y+dy,color,2.4);ctx.save();ctx.fillStyle=color;ctx.beginPath();const sy=Math.sign(dy)||1;ctx.moveTo(x,y+dy);ctx.lineTo(x-5*os,y+dy-8*os*sy);ctx.lineTo(x+5*os,y+dy-8*os*sy);ctx.closePath();ctx.fill();ctx.restore()}
-function drawSpring(x,top,bottom){const os=objectScale(),coils=18,amp=13*os;ctx.save();ctx.strokeStyle='#526978';ctx.lineWidth=4*visualScale();ctx.beginPath();ctx.moveTo(x,top);for(let i=1;i<=coils;i++){const y=top+(bottom-top)*i/coils;ctx.lineTo(x+(i%2?amp:-amp),y)}ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();const right=x+25*os<sceneWidth-16;text('k',right?x+25*os:x-25*os,(top+bottom)/2,17,right?'left':'right','#344b59',750)}
+function drawSpring(x,top,bottom){const os=objectScale(),coils=18,amp=13*os;ctx.save();ctx.strokeStyle='#526978';ctx.lineWidth=4*visualScale();ctx.beginPath();ctx.moveTo(x,top);for(let i=1;i<=coils;i++){const y=top+(bottom-top)*i/coils;ctx.lineTo(x+(i%2?amp:-amp),y)}ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();text('k',x+25*os,(top+bottom)/2,17,'left','#344b59',750)}
 function drawMass(x,y){const os=objectScale(),w=54*os,h=44*os;ctx.save();ctx.fillStyle='#3c92b7';ctx.strokeStyle='#174d68';ctx.lineWidth=3*visualScale();ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,7*os);ctx.fill();ctx.stroke();ctx.restore();text('m',x,y,18,'center','#fff',800)}
 function drawAxis(x,cy,A){const os=objectScale(),tick=7*os;line(x,cy-A-22*os,x,cy+A+22*os,'#60727e',1.5);line(x-tick,cy-A,x+tick,cy-A);line(x-tick,cy,x+tick,cy);line(x-tick,cy+A,x+tick,cy+A);text('+A',x-12*os,cy-A,15,'right');text('0',x-12*os,cy,15,'right');text('−A',x-12*os,cy+A,15,'right')}
 function drawPhaseArc(cx,cy,A,phi0){const os=objectScale(),r=Math.min(46*os,A*.52),end=-normalizeAngle(phi0);ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=2*visualScale();ctx.setLineDash(scaledDash([4,3]));ctx.beginPath();ctx.arc(cx,cy,r,0,end,true);ctx.stroke();ctx.restore();const mid=end/2;text('φ₀',cx+(r+13*os)*Math.cos(mid),cy+(r+13*os)*Math.sin(mid),15,'center','#8c5818',800)}
 function drawCircle(cx,cy,A,phase,phi0,phaseMode){ctx.save();ctx.strokeStyle='#506773';ctx.lineWidth=2*visualScale();ctx.beginPath();ctx.arc(cx,cy,A,0,Math.PI*2);ctx.stroke();ctx.restore();line(cx-A-15,cy,cx+A+15,cy,'#a4b1b8',1);line(cx,cy-A-15,cx,cy+A+15,'#a4b1b8',1);
- if(phaseMode){const os=objectScale(),compact=sceneWidth<460||sceneHeight<310,ix=cx+A*Math.cos(phi0),iy=cy-A*Math.sin(phi0);line(cx,cy,ix,iy,'#a56a1f',1.7,[5,4]);ctx.save();ctx.fillStyle='rgba(198,62,55,.22)';ctx.strokeStyle='rgba(198,62,55,.45)';ctx.lineWidth=1.4*visualScale();ctx.beginPath();ctx.arc(ix,iy,10*os,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();if(!compact)text('t=0',ix+14*os,iy-14*os,12,'left','#a1473f',700);drawPhaseArc(cx,cy,A,phi0)}
+ if(phaseMode){const os=objectScale(),ix=cx+A*Math.cos(phi0),iy=cy-A*Math.sin(phi0);line(cx,cy,ix,iy,'#a56a1f',1.7,[5,4]);ctx.save();ctx.fillStyle='rgba(198,62,55,.22)';ctx.strokeStyle='rgba(198,62,55,.45)';ctx.lineWidth=1.4*visualScale();ctx.beginPath();ctx.arc(ix,iy,10*os,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();text('t=0',ix+14*os,iy-14*os,12,'left','#a1473f',700);drawPhaseArc(cx,cy,A,phi0)}
  const os=objectScale(),px=cx+A*Math.cos(phase),py=cy-A*Math.sin(phase);line(cx,cy,px,py,'#16845c',3);ctx.fillStyle='#c63e37';ctx.beginPath();ctx.arc(px,py,9*os,0,Math.PI*2);ctx.fill();return{px,py};}
-function drawGraph(x,y,w,A,phase,phi0,t,period){const compact=w<150;line(x,y-A-18,x,y+A+18);line(x,y,x+w,y);if(!compact)text('x',x-9,y-A-15,15);text('t',x+w+10,y+12,compact?12:15);line(x,y-A,x+w,y-A,'#aebbc2',1,[4,4]);line(x,y+A,x+w,y+A,'#aebbc2',1,[4,4]);if(!compact){text('+A',x-7,y-A,13,'right');text('−A',x-7,y+A,13,'right');text('0',x-7,y,13,'right')}
+function drawGraph(x,y,w,A,phase,phi0,t,period){line(x,y-A-18,x,y+A+18);line(x,y,x+w,y);text('x',x-9,y-A-15,15);text('t',x+w+10,y+12,15);line(x,y-A,x+w,y-A,'#aebbc2',1,[4,4]);line(x,y+A,x+w,y+A,'#aebbc2',1,[4,4]);text('+A',x-7,y-A,13,'right');text('−A',x-7,y+A,13,'right');text('0',x-7,y,13,'right');
  const n=Math.floor(Math.max(0,t)/period),cycle=((t%period)+period)%period,frac=cycle/period;
- if(!compact){text(`(${n}T, 0)`,x-3,y+19,12,'left','#334d5b',700);text(`${n+1}T`,x+w,y+19,12,'center','#334d5b',700)}
+ text(`(${n}T, 0)`,x-3,y+19,12,'left','#334d5b',700);text(`${n+1}T`,x+w,y+19,12,'center','#334d5b',700);
  ctx.save();ctx.strokeStyle='#8da3b2';ctx.globalAlpha=.58;ctx.lineWidth=2*visualScale();ctx.beginPath();for(let i=0;i<=180;i++){const u=i/180,xx=x+u*w,yy=y-A*Math.sin(u*Math.PI*2+phi0);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();ctx.restore();
  ctx.save();ctx.strokeStyle='#226b92';ctx.lineWidth=3*visualScale();ctx.beginPath();const nPoints=Math.max(1,Math.floor(180*frac));for(let i=0;i<=nPoints;i++){const u=i/180,xx=x+u*w,yy=y-A*Math.sin(u*Math.PI*2+phi0);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();ctx.restore();
  const px=x+frac*w,py=y-A*Math.sin(phase),yFinal=y-A*Math.sin(phi0);line(x+w,yFinal,x+w,y,'#8da3b2',1,[3,3]);return{px,py,x0:x,y0:y-A*Math.sin(phi0)};}
 function drawCurrentPoint(x,y,r=6,color='#c63e37'){ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r*objectScale(),0,Math.PI*2);ctx.fill();ctx.restore()}
 function drawOutlinePoint(x,y,r=7,color='#a56a1f'){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2*visualScale();ctx.setLineDash(scaledDash([4,3]));ctx.beginPath();ctx.arc(x,y,r*objectScale(),0,Math.PI*2);ctx.stroke();ctx.restore()}
-function drawGhostMass(x,y,label=true){const os=objectScale(),w=54*os,h=44*os;ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=1.8*visualScale();ctx.setLineDash(scaledDash([5,4]));ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,7*os);ctx.stroke();ctx.restore();if(label){const right=x+72*os<sceneWidth-8;text('t=0',right?x+34*os:x-34*os,y-28*os,12,right?'left':'right','#8c5818',700)}}
-function drawPhaseReadout(phi0,omega,A,x=328,y=62){
+function drawGhostMass(x,y){const os=objectScale(),w=54*os,h=44*os;ctx.save();ctx.strokeStyle='#a56a1f';ctx.lineWidth=1.8*visualScale();ctx.setLineDash(scaledDash([5,4]));ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,7*os);ctx.stroke();ctx.restore();text('t=0',x+34*os,y-28*os,12,'left','#8c5818',700)}
+function drawPhaseReadout(phi0,omega,A,x=36,y=40){
  const deg=Math.round(normalizeAngle(phi0)*180/Math.PI)%360,x0=Math.sin(phi0),v0=Math.cos(phi0),dir=Math.abs(v0)<.015?'υ₀ = 0':v0>0?'υ₀ > 0':'υ₀ < 0';
  const rows=[
   {value:`φ₀ = ${deg}°`,size:14,color:'#176a89',weight:800},
@@ -176,68 +168,43 @@ function drawPhaseReadout(phi0,omega,A,x=328,y=62){
   {value:dir,size:13,color:'#334d5b',weight:700},
   {value:'x=A·ημ(ωt+φ₀)',size:13,color:'#334d5b',weight:750}
  ];
- const padX=15,padY=13,lineGap=22,w=Math.max(244,Math.max(...rows.map(row=>textWidth(row.value,row.size,row.weight)))+padX*2),h=Math.max(94,padY*2+(rows.length-1)*lineGap+textSize(14));
+ const padX=15,padY=11,lineGap=20,w=Math.max(232,Math.max(...rows.map(row=>textWidth(row.value,row.size,row.weight)))+padX*2),h=Math.max(86,padY*2+(rows.length-1)*lineGap+textSize(14));
  ctx.save();ctx.fillStyle='#ffffffed';ctx.strokeStyle='#c7d2da';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(x,y,w,h,9);ctx.fill();ctx.stroke();ctx.restore();
  rows.forEach((row,index)=>text(row.value,x+padX,y+padY+textSize(14)/2+index*lineGap,row.size,'left',row.color,row.weight));
- return{w,h};
 }
 function drawArrowXY(x1,y1,x2,y2,color='#16845c',label='',opts={}){
  const width=opts.width??3.2,head=(opts.head??11)*objectScale();line(x1,y1,x2,y2,color,width);ctx.save();ctx.fillStyle=color;const a=Math.atan2(y2-y1,x2-x1);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-head*Math.cos(a-.45),y2-head*Math.sin(a-.45));ctx.lineTo(x2-head*Math.cos(a+.45),y2-head*Math.sin(a+.45));ctx.closePath();ctx.fill();ctx.restore();
  if(label){const back=opts.labelBack??18,dy=opts.labelYOffset??-15,lx=x2-Math.cos(a)*back,ly=y2-Math.sin(a)*back+dy;text(label,lx,ly,opts.labelSize??15,'center',color,900)}
 }
 function drawHorizontal(){
- resizeCanvas();
- const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;const W=sceneWidth,H=sceneHeight,cy=Math.round(H*.52),origin=Math.round(W*.5),A=Math.max(58,Math.min(W*.43,(W-105)/2,360)),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,x=A*Math.sin(phase),v=A*Math.cos(phase),acc=-x;
+ const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;const W=canvas.width,H=canvas.height,cy=Math.round(H*.52),origin=Math.round(W*.5),A=Math.max(80,Math.min(W*.43,(W-105)/2,360)),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,x=A*Math.sin(phase),v=A*Math.cos(phase),acc=-x;
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);line(origin-A-34,cy,origin+A+42,cy,'#60727e',2.8);drawArrowXY(origin+A+20,cy,origin+A+47,cy,'#60727e','',{width:2.8,head:10});text('−',origin-A-30,cy-18,17,'center','#526978',900);text('+',origin+A+46,cy-18,17,'center','#526978',900);
- for(const [mark,label] of [[-1,'−A'],[-.5,''],[0,''],[.5,''],[1,'+A']]){const px=origin+mark*A;line(px,cy-11,px,cy+11,'#93a4af',1.7);if(label)text(label,px,cy+27,13,'center','#526978',800)}
- text('0',origin,cy-42,13,'center','#526978',850);
+ for(const [mark,label] of [[-1,'−A'],[-.5,''],[0,'ΘΙΤ'],[.5,''],[1,'+A']]){const px=origin+mark*A;line(px,cy-11,px,cy+11,'#93a4af',1.7);if(label)text(label,px,cy+27,13,'center','#526978',800)}
+ text('0',origin,cy-20,13,'center','#526978',850);
  line(origin+x,cy-64,origin+x,cy+60,'#b7c5ce',1.5,[5,5]);if(state.showPosition)drawArrowXY(origin,cy+46,origin+x,cy+46,'#226b92','x',{labelYOffset:18,labelBack:18});if(state.showVelocity&&Math.abs(v)>4)drawArrowXY(origin+x,cy-35,origin+x+Math.sign(v)*Math.min(Math.abs(v)*.62,130),cy-35,'#16845c','υ',{labelYOffset:-18,labelBack:19});if(state.showAcceleration&&Math.abs(acc)>4)drawArrowXY(origin+x,cy-62,origin+x+Math.sign(acc)*Math.min(Math.abs(acc)*.62,130),cy-62,'#c63e37','α',{labelYOffset:-18,labelBack:19});if(state.showForce&&Math.abs(acc)>4)drawArrowXY(origin+x,cy+72,origin+x+Math.sign(acc)*Math.min(Math.abs(acc)*.52,112),cy+72,'#8a4ab8','ΣF',{labelYOffset:18,labelBack:22});
  ctx.save();ctx.fillStyle='#3c92b7';ctx.strokeStyle='#174d68';ctx.lineWidth=3.4;ctx.beginPath();ctx.roundRect(origin+x-34,cy-26,68,52,9);ctx.fill();ctx.stroke();ctx.restore();text('m',origin+x,cy,19,'center','#fff',900);
- text('ΘΙΤ',origin,Math.min(H-50,cy+62),12,'center','#526978',850);
  if(state.showClock)drawTextBox(`t = ${state.t.toFixed(2)} s`,18,14,14,{minWidth:126,minHeight:32});
  if(state.showEnergy){const k=(x/A)**2,kin=1-k,bx=W-142,by=18;for(const [i,name,val,color] of [[0,'U',k,'#c63e37'],[1,'K',kin,'#16845c']]){text(name,bx,by+i*23+6,12,'left','#334d5b',800);ctx.fillStyle='#dfe7ed';ctx.fillRect(bx+18,by+i*23,96,12);ctx.fillStyle=color;ctx.fillRect(bx+18,by+i*23,96*Math.max(0,Math.min(1,val)),12)}}
  text('Οριζόντια ΑΑΤ σώματος',origin,H-28,15,'center','#334d5b',750);requestAnimationFrame(draw);
 }
-function springSceneLayout(W,H,A){
- const os=objectScale(),hasCircle=!!state.circle,hasGraph=!!state.graph;
- const compact=W<460||H<310,cy=Math.round(H*.49),top=Math.max(32,cy-A-(compact?78:125)),labelY=H-(compact?22:58);
- let circleX=0,graphX=0,graphW=0,springX=W*.5,phaseBoxX=0;
- if(hasGraph){
-  circleX=Math.max(A+12*os,W*.1);
-  graphX=circleX+A+30*os;
-  springX=Math.min(W-56*os,W*.91);
-  graphW=Math.max(78,Math.min(W*.38,springX-graphX-62*os));
-  phaseBoxX=Math.min(W-260,Math.max(graphX+12,graphX+graphW*.08));
- }else if(hasCircle){
-  circleX=Math.max(A+12*os,W*.14);
-  springX=Math.min(W-58*os,W*.86);
-  phaseBoxX=Math.min(W-260,Math.max(circleX+A+18*os,W*.36));
- }else{
-  springX=W*.5;
-  phaseBoxX=Math.min(W-260,Math.max(24,W*.54));
- }
- return{compact,cy,top,labelY,circleX,graphX,graphW,springX,phaseBoxX};
-}
 function draw(){
  if(state.horizontal){drawHorizontal();return}
- resizeCanvas();
  const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;state.transition=Math.min(1,state.transition+dt*2.4);const u=ease(state.transition);
- const W=sceneWidth,H=sceneHeight,compact=W<460||H<310;
- const amplitudeByFrame=Math.min(state.amplitude,H*(compact?0.18:0.21),W*(compact?0.12:0.14));
- const A=Math.min(108,Math.max(compact?42:58,amplitudeByFrame)),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,os=objectScale();
+ const W=canvas.width,H=canvas.height,cy=225,A=Math.min(state.amplitude,78),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,os=objectScale();
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);
- const layout=springSceneLayout(W,H,A);
+ const expanded=state.circle||state.graph;
  const springHome=W*.5;
- const springX=lerp(springHome,layout.springX,u),cy=layout.cy,massY=cy-A*Math.sin(phase),top=layout.top;
+ const springTarget=state.graph?Math.min(W-125*os,W*.84):state.circle?Math.min(W-205*os,W*.72):springHome;
+ const springX=lerp(springHome,springTarget,u),massY=cy-A*Math.sin(phase),top=36;
  let circlePoint=null,graphPoint=null,circleX=null;
- if(state.circle){circleX=layout.circleX;circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
- if(state.graph)graphPoint=drawGraph(layout.graphX,cy,layout.graphW,A,phase,state.phi0,state.t,state.period);
- if(state.projection&&circlePoint){line(Math.min(circlePoint.px,circleX),massY,springX,massY,'#8d4f47',1.7,[7,5]);ctx.save();ctx.strokeStyle='#c63e37';ctx.lineWidth=2*visualScale();ctx.setLineDash(scaledDash([3,3]));ctx.beginPath();ctx.arc(circleX,massY,10*os,0,Math.PI*2);ctx.stroke();ctx.restore();if(graphPoint)drawOutlinePoint(graphPoint.px,graphPoint.py,7,'#c63e37');drawCurrentPoint(circlePoint.px,circlePoint.py,9)}
+ if(state.circle){circleX=state.graph?Math.max(112*os,W*.13):Math.max(210*os,W*.26);circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
+ if(state.graph){const graphX=state.circle?Math.max(246*os,W*.285):Math.max(150*os,W*.17),graphW=state.circle?Math.min(300,W*.35):Math.min(410,W*.47);graphPoint=drawGraph(graphX,cy,graphW,A,phase,state.phi0,state.t,state.period)}
+ if(state.projection&&circlePoint){line(Math.min(circlePoint.px,circleX),massY,springX,massY,'#8d4f47',1.7,[7,5]);ctx.save();ctx.strokeStyle='#c63e37';ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(circleX,massY,10,0,Math.PI*2);ctx.stroke();ctx.restore();if(graphPoint)drawOutlinePoint(graphPoint.px,graphPoint.py,7,'#c63e37');drawCurrentPoint(circlePoint.px,circlePoint.py,9)}
  if(state.axis)drawAxis(springX-55,cy,A);
  line(springX-45,top,springX+45,top,'#344b59',5);drawSpring(springX,top+3,massY-24);drawMass(springX,massY);
- if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY,!layout.compact);const rightLabel=springX+82*os<W;if(!layout.compact){if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28,arrowX=rightLabel?springX+42*os:springX-42*os;drawArrow(arrowX,initialMassY,arrowDy,'#a56a1f');text('υ₀',rightLabel?springX+55*os:springX-55*os,initialMassY+arrowDy/2,14,rightLabel?'left':'right','#8c5818',800)}else{text('υ₀=0',rightLabel?springX+42*os:springX-42*os,initialMassY-30*os,13,rightLabel?'left':'right','#8c5818',800)}}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');if(layout.compact){const deg=Math.round(normalizeAngle(state.phi0)*180/Math.PI)%360;drawTextBox(`φ₀ = ${deg}°`,8,14,12,{minWidth:86,minHeight:30,fill:'#ffffffdd',stroke:'#c7d2da',color:'#176a89',padX:10,padY:6})}else drawPhaseReadout(state.phi0,omega,A,layout.phaseBoxX,56)}
- {const label=`t = ${state.t.toFixed(2)} s`,w=Math.max(116,textWidth(label,14,800)+28);drawTextBox(label,W/2-w/2,14,14,{minWidth:116,minHeight:32});}
- if(!layout.compact){text('Ταλαντωτής (m, k)',springX,layout.labelY,17);if(state.circle)text('Κυκλικό μοντέλο',circleX,layout.labelY,17);if(state.graph)text('x(t) — ταλαντωτής / προβολή',layout.graphX+layout.graphW/2,layout.labelY,16)}
+ if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A,36,40)}
+ {const label=`t = ${state.t.toFixed(2)} s`,w=Math.max(116,textWidth(label,14,800)+28);drawTextBox(label,450-w/2,14,14,{minWidth:116,minHeight:32});}
+ text('Ταλαντωτής (m, k)',springX,398,16);if(state.circle)text('Κυκλικό μοντέλο',circleX,398,16);if(state.graph)text('x(t) — ταλαντωτής / προβολή',state.circle?Math.max(246*os,W*.285)+Math.min(300,W*.35)/2:Math.max(150*os,W*.17)+Math.min(410,W*.47)/2,398,15);
  requestAnimationFrame(draw);
 }
 updateButtons();requestAnimationFrame(draw);
