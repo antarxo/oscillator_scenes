@@ -18,7 +18,7 @@ body.horizontal #phaseBtn,body.horizontal #nowBtn,body.horizontal #phasePanel{di
 body.horizontal .controls{min-height:clamp(26px,18vh,40px);padding:clamp(3px,2.4vh,6px) clamp(5px,2.2vw,9px);gap:clamp(3px,1vw,5px)}
 body.horizontal button{min-width:clamp(24px,8vw,34px);height:clamp(20px,13vh,26px);padding:0 clamp(5px,2vw,9px);font-size:clamp(9px,3.1vw,12px)}
 body.horizontal button.hidden-control{display:none!important}
-canvas{display:block;width:100%;height:100%;object-fit:fill}
+canvas{display:block;width:100%;height:100%}
 .phase-panel{display:none;align-items:center;justify-content:center;gap:clamp(5px,1.2vw,9px);width:100%;min-height:clamp(27px,7.5vh,38px);padding:clamp(4px,1.6vh,7px) clamp(7px,2vw,10px);border-top:1px solid #26323d;background:#101821;color:#e9f2f8;font-size:clamp(10px,2.3vw,12px)}
 .phase-panel.visible{display:flex}.phase-panel label{font-weight:800;white-space:nowrap}.phase-panel input{flex:1;min-width:80px;accent-color:#4aa3d8}.phase-value{min-width:38px;text-align:right;font-weight:850;color:#91d7ff}
 .controls{min-height:clamp(30px,8.5vh,46px);display:flex;align-items:center;justify-content:center;gap:clamp(3px,1vw,6px);flex-wrap:wrap;width:100%;padding:clamp(4px,1.6vh,7px) clamp(6px,2vw,10px);border-top:1px solid #222f3a;background:#0b1118;box-shadow:inset 0 1px 0 #ffffff10}
@@ -89,8 +89,6 @@ function setFlag(key,val){state[key]=val;
 function updateButtons(){
  els.playBtn.textContent=state.running?'⏸':'▶';
  document.body.classList.toggle('horizontal',state.horizontal);
- if(state.horizontal&&canvas.height!==260){canvas.width=900;canvas.height=260}
- if(!state.horizontal&&canvas.height!==360){canvas.width=900;canvas.height=360}
  els.axisBtn.textContent=state.horizontal?'x':'x↕';
  els.circleBtn.textContent=state.horizontal?'υ':'φ↻';
  els.projectionBtn.textContent=state.horizontal?'α':'⊥x';
@@ -117,6 +115,15 @@ function updateButtons(){
  els.projectionBtn.disabled=state.horizontal?false:!state.circle;els.graphBtn.disabled=state.horizontal?false:!state.projection;els.phaseBtn.disabled=!state.graph;els.nowBtn.disabled=!state.circle;
  const deg=Math.round(normalizeAngle(state.phi0)*180/Math.PI)%360;els.phaseRange.value=String(deg);els.phaseValue.textContent=`${deg}°`;
 }
+function syncCanvasSize(){
+ const rect=canvas.getBoundingClientRect();
+ const fallbackH=state.horizontal?260:360;
+ const width=Math.max(220,Math.round(rect.width||canvas.clientWidth||canvas.width||900));
+ const height=Math.max(120,Math.round(rect.height||canvas.clientHeight||canvas.height||fallbackH));
+ if(canvas.width!==width)canvas.width=width;
+ if(canvas.height!==height)canvas.height=height;
+ return{W:width,H:height};
+}
 function toggleRunning(){state.running=!state.running;state.last=performance.now();updateButtons()}
 els.playBtn.onclick=toggleRunning;
 document.getElementById('stageWrap').onclick=toggleRunning;
@@ -130,9 +137,9 @@ els.nowBtn.onclick=()=>{state.phi0=normalizeAngle(2*Math.PI*state.t/state.period
 els.phaseRange.addEventListener('input',()=>{state.phi0=Number(els.phaseRange.value)*Math.PI/180;state.t=0;state.running=false;state.phaseMode=true;state.last=performance.now();updateButtons()});
 
 function lerp(a,b,u){return a+(b-a)*u}function ease(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2}
-function displayScale(){const rect=canvas.getBoundingClientRect();return Math.max(.1,Math.min(2,(rect.width||canvas.width)/canvas.width))}
-function visualScale(){return Math.min(1.45,Math.max(1,1/displayScale()))}
-function objectScale(){return Math.min(1.28,visualScale())}
+function displayScale(){return 1}
+function visualScale(){return Math.max(.86,Math.min(1.18,canvas.width/706))}
+function objectScale(){return Math.max(.82,Math.min(1.12,canvas.width/706))}
 function scaledDash(dash=[]){return Array.isArray(dash)?dash.map(v=>v*visualScale()):dash}
 function line(x1,y1,x2,y2,stroke='#263b48',w=2,dash=[]){ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=w*visualScale();ctx.setLineDash(scaledDash(dash));ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
 function textSize(size){return Math.max(size,sceneTextSize/displayScale())}
@@ -163,21 +170,22 @@ function drawGhostMass(x,y){const os=objectScale(),w=54*os,h=44*os;ctx.save();ct
 function drawPhaseReadout(phi0,omega,A,x=36,y=40){
  const deg=Math.round(normalizeAngle(phi0)*180/Math.PI)%360,x0=Math.sin(phi0),v0=Math.cos(phi0),dir=Math.abs(v0)<.015?'υ₀ = 0':v0>0?'υ₀ > 0':'υ₀ < 0';
  const rows=[
-  {value:`φ₀ = ${deg}°`,size:14,color:'#176a89',weight:800},
-  {value:`x₀/A = ${x0.toFixed(2)}`,size:13,color:'#334d5b',weight:700},
-  {value:dir,size:13,color:'#334d5b',weight:700},
-  {value:'x=A·ημ(ωt+φ₀)',size:13,color:'#334d5b',weight:750}
+  {value:`φ₀ = ${deg}°`,size:13,color:'#176a89',weight:800},
+  {value:`x₀/A = ${x0.toFixed(2)}`,size:12,color:'#334d5b',weight:700},
+  {value:dir,size:12,color:'#334d5b',weight:700},
+  {value:'x=A·ημ(ωt+φ₀)',size:12,color:'#334d5b',weight:750}
  ];
- const padX=15,padY=11,lineGap=20,w=Math.max(232,Math.max(...rows.map(row=>textWidth(row.value,row.size,row.weight)))+padX*2),h=Math.max(86,padY*2+(rows.length-1)*lineGap+textSize(14));
+ const padX=11,padY=8,lineGap=17,w=Math.max(184,Math.max(...rows.map(row=>textWidth(row.value,row.size,row.weight)))+padX*2),h=Math.max(72,padY*2+(rows.length-1)*lineGap+textSize(13));
  ctx.save();ctx.fillStyle='#ffffffed';ctx.strokeStyle='#c7d2da';ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(x,y,w,h,9);ctx.fill();ctx.stroke();ctx.restore();
- rows.forEach((row,index)=>text(row.value,x+padX,y+padY+textSize(14)/2+index*lineGap,row.size,'left',row.color,row.weight));
+ rows.forEach((row,index)=>text(row.value,x+padX,y+padY+textSize(13)/2+index*lineGap,row.size,'left',row.color,row.weight));
 }
 function drawArrowXY(x1,y1,x2,y2,color='#16845c',label='',opts={}){
  const width=opts.width??3.2,head=(opts.head??11)*objectScale();line(x1,y1,x2,y2,color,width);ctx.save();ctx.fillStyle=color;const a=Math.atan2(y2-y1,x2-x1);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-head*Math.cos(a-.45),y2-head*Math.sin(a-.45));ctx.lineTo(x2-head*Math.cos(a+.45),y2-head*Math.sin(a+.45));ctx.closePath();ctx.fill();ctx.restore();
  if(label){const back=opts.labelBack??18,dy=opts.labelYOffset??-15,lx=x2-Math.cos(a)*back,ly=y2-Math.sin(a)*back+dy;text(label,lx,ly,opts.labelSize??15,'center',color,900)}
 }
 function drawHorizontal(){
- const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;const W=canvas.width,H=canvas.height,cy=Math.round(H*.52),origin=Math.round(W*.5),A=Math.max(80,Math.min(W*.43,(W-105)/2,360)),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,x=A*Math.sin(phase),v=A*Math.cos(phase),acc=-x;
+ const size=syncCanvasSize(),W=size.W,H=size.H;
+ const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;const cy=Math.round(H*.52),origin=Math.round(W*.5),A=Math.max(70,Math.min(W*.43,(W-105)/2,H*.33,360)),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,x=A*Math.sin(phase),v=A*Math.cos(phase),acc=-x;
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);line(origin-A-34,cy,origin+A+42,cy,'#60727e',2.8);drawArrowXY(origin+A+20,cy,origin+A+47,cy,'#60727e','',{width:2.8,head:10});text('−',origin-A-30,cy-18,17,'center','#526978',900);text('+',origin+A+46,cy-18,17,'center','#526978',900);
  for(const [mark,label] of [[-1,'−A'],[-.5,''],[0,'ΘΙΤ'],[.5,''],[1,'+A']]){const px=origin+mark*A;line(px,cy-11,px,cy+11,'#93a4af',1.7);if(label)text(label,px,cy+27,13,'center','#526978',800)}
  text('0',origin,cy-20,13,'center','#526978',850);
@@ -189,22 +197,25 @@ function drawHorizontal(){
 }
 function draw(){
  if(state.horizontal){drawHorizontal();return}
+ const size=syncCanvasSize(),W=size.W,H=size.H;
  const now=performance.now(),dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)state.t+=dt;state.transition=Math.min(1,state.transition+dt*2.4);const u=ease(state.transition);
- const W=canvas.width,H=canvas.height,cy=168,A=Math.min(state.amplitude,64),omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0,os=objectScale();
+ const os=objectScale(),labelY=Math.max(112,H-18),top=Math.max(10,Math.min(20,H*.055));
+ const A=Math.max(44,Math.min(state.amplitude,H*.23,(labelY-top-58)*.34));
+ const cy=Math.round(Math.max(top+A+46,Math.min(labelY-56,H*.48)));
+ const omega=2*Math.PI/state.period,phase=omega*state.t+state.phi0;
  ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8fbfc';ctx.fillRect(0,0,W,H);
- const expanded=state.circle||state.graph;
  const springHome=W*.5;
- const springTarget=state.graph?Math.min(W-94*os,W*.88):state.circle?Math.min(W-170*os,W*.76):springHome;
- const springX=lerp(springHome,springTarget,u),massY=cy-A*Math.sin(phase),top=22;
+ const springTarget=state.graph?Math.min(W-104*os,W*.83):state.circle?Math.min(W-145*os,W*.76):springHome;
+ const springX=lerp(springHome,springTarget,u),massY=cy-A*Math.sin(phase);
  let circlePoint=null,graphPoint=null,circleX=null;
- if(state.circle){circleX=state.graph?Math.max(112*os,W*.13):Math.max(205*os,W*.25);circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
- if(state.graph){const graphX=state.circle?Math.max(258*os,W*.30):Math.max(145*os,W*.16),graphW=state.circle?Math.min(360,W*.40):Math.min(470,W*.52);graphPoint=drawGraph(graphX,cy,graphW,A,phase,state.phi0,state.t,state.period)}
+ if(state.circle){circleX=state.graph?Math.max(88*os,W*.16):Math.max(180*os,W*.28);circlePoint=drawCircle(circleX,cy,A,phase,state.phi0,state.phaseMode)}
+ if(state.graph){const graphX=state.circle?Math.max(205*os,W*.35):Math.max(110*os,W*.18),graphW=state.circle?Math.min(W*.34,Math.max(160,W-springX-graphX-70*os)):Math.min(W*.55,Math.max(230,W-graphX-120*os));graphPoint=drawGraph(graphX,cy,graphW,A,phase,state.phi0,state.t,state.period)}
  if(state.projection&&circlePoint){line(Math.min(circlePoint.px,circleX),massY,springX,massY,'#8d4f47',1.7,[7,5]);ctx.save();ctx.strokeStyle='#c63e37';ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(circleX,massY,10,0,Math.PI*2);ctx.stroke();ctx.restore();if(graphPoint)drawOutlinePoint(graphPoint.px,graphPoint.py,7,'#c63e37');drawCurrentPoint(circlePoint.px,circlePoint.py,9)}
  if(state.axis)drawAxis(springX-55,cy,A);
- line(springX-45,top,springX+45,top,'#344b59',5);drawSpring(springX,top+3,massY-24);drawMass(springX,massY);
- if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A,34,22)}
- {const label=`t = ${state.t.toFixed(2)} s`,w=Math.max(116,textWidth(label,14,800)+28);drawTextBox(label,450-w/2,14,14,{minWidth:116,minHeight:32});}
- text('Ταλαντωτής (m, k)',springX,318,14);if(state.circle)text('Κυκλικό μοντέλο',circleX,318,14);if(state.graph)text('x(t) — ταλαντωτής / προβολή',state.circle?Math.max(258*os,W*.30)+Math.min(360,W*.40)/2:Math.max(145*os,W*.16)+Math.min(470,W*.52)/2,318,13);
+ line(springX-38*os,top,springX+38*os,top,'#344b59',5);drawSpring(springX,top+3,massY-24*os);drawMass(springX,massY);
+ if(state.phaseMode){const initialMassY=cy-A*Math.sin(state.phi0),v0=Math.cos(state.phi0);drawGhostMass(springX,initialMassY);if(Math.abs(v0)>.015){const arrowDy=v0>0?-28:28;drawArrow(springX+42,initialMassY,arrowDy,'#a56a1f');text('υ₀',springX+55,initialMassY+arrowDy/2,14,'left','#8c5818',800)}else{text('υ₀=0',springX+42,initialMassY-30,13,'left','#8c5818',800)}if(graphPoint)drawOutlinePoint(graphPoint.x0,graphPoint.y0,6,'#a56a1f');drawPhaseReadout(state.phi0,omega,A,8,10)}
+ {const label=`t = ${state.t.toFixed(2)} s`,w=Math.max(116,textWidth(label,14,800)+28);drawTextBox(label,W/2-w/2,Math.max(8,top-8),14,{minWidth:116,minHeight:32});}
+ text('Ταλαντωτής (m, k)',springX,labelY,14);if(state.circle)text('Κυκλικό μοντέλο',circleX,labelY,14);if(state.graph){const gx=state.circle?Math.max(205*os,W*.35):Math.max(110*os,W*.18),gw=state.circle?Math.min(W*.34,Math.max(160,W-springX-gx-70*os)):Math.min(W*.55,Math.max(230,W-gx-120*os));text('x(t) — ταλαντωτής / προβολή',gx+gw/2,labelY,13)}
  requestAnimationFrame(draw);
 }
 updateButtons();requestAnimationFrame(draw);
